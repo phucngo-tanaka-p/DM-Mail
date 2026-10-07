@@ -19,7 +19,9 @@ class SecurityTest extends TestCase
         $this->actingAs($user)
             ->get(route('security.edit'))
             ->assertOk()
-            ->assertSee('Update password')
+            ->assertSee('パスワードの変更')
+            ->assertSee('<title>', false)
+            ->assertSee('パスワード設定 - DM送信')
             ->assertDontSee('Passkeys')
             ->assertDontSee('Two-factor authentication');
     }
