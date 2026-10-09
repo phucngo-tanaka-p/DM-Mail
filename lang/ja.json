@@ -43,6 +43,11 @@
     "Update the appearance settings for your account": "画面の明るさを選べます",
     "Update your name and email address": "名前とメールアドレスを変更できます",
 
+    "Showing": "表示：",
+    "to": "〜",
+    "of": "件 / 全",
+    "results": "件",
+
     "Reset Password Notification": "パスワード再設定のご案内",
     "You are receiving this email because we received a password reset request for your account.": "パスワード再設定のリクエストを受け付けました。下のボタンから新しいパスワードを設定してください。",
     "Reset Password": "パスワードを再設定",
