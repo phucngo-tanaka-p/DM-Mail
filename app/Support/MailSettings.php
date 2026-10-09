@@ -2,8 +2,10 @@
 
 namespace App\Support;
 
+use App\Models\Recipient;
 use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * 設定画面で管理する値（settings テーブル）への型付きアクセス。
@@ -42,6 +44,48 @@ class MailSettings
         return $this->read(self::SIGNATURE);
     }
 
+    /**
+     * 全メール共通の CC（環境変数 MAIL_CC）
+     *
+     * @return list<string>
+     */
+    public function commonCc(): array
+    {
+        return AddressList::parse(config()->string('mail.common_cc'));
+    }
+
+    /**
+     * 全メール共通の BCC（環境変数 MAIL_BCC）
+     *
+     * @return list<string>
+     */
+    public function commonBcc(): array
+    {
+        return AddressList::parse(config()->string('mail.common_bcc'));
+    }
+
+    /**
+     * 宛先1件に付ける CC / BCC を、宛先ごと・環境変数・保存用BCC から組み立てる。
+     *
+     * 同じアドレスに2通届かないよう、To と重なるものは除き、CC と BCC の両方にあるものは CC だけに残す。
+     * 大文字・小文字は区別しない。
+     *
+     * @return array{cc: list<string>, bcc: list<string>}
+     */
+    public function copyAddressesFor(Recipient $recipient): array
+    {
+        $seen = [Str::lower($recipient->email) => true];
+
+        $cc = $this->withoutSeen([...AddressList::parse($recipient->cc), ...$this->commonCc()], $seen);
+        $bcc = $this->withoutSeen([
+            ...AddressList::parse($recipient->bcc),
+            ...$this->commonBcc(),
+            ...AddressList::parse($this->archiveBcc()),
+        ], $seen);
+
+        return ['cc' => $cc, 'bcc' => $bcc];
+    }
+
     public function update(?string $archiveBcc, int $sendInterval, string $signature): void
     {
         DB::transaction(function () use ($archiveBcc, $sendInterval, $signature) {
@@ -49,6 +93,27 @@ class MailSettings
             $this->write(self::SEND_INTERVAL, (string) $sendInterval);
             $this->write(self::SIGNATURE, $signature);
         });
+    }
+
+    /**
+     * @param  list<string>  $addresses
+     * @param  array<string, true>  $seen
+     * @return list<string>
+     */
+    private function withoutSeen(array $addresses, array &$seen): array
+    {
+        $result = [];
+
+        foreach ($addresses as $address) {
+            $key = Str::lower($address);
+
+            if (! isset($seen[$key])) {
+                $seen[$key] = true;
+                $result[] = $address;
+            }
+        }
+
+        return $result;
     }
 
     private function read(string $key): ?string

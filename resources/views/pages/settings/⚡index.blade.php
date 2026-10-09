@@ -3,6 +3,7 @@
 use App\Support\MailSettings;
 use Flux\Flux;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -24,6 +25,24 @@ new #[Title('設定')] class extends Component
 
         $this->signature = $signature ?? '';
         $this->hasSignature = $signature !== null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    #[Computed]
+    public function commonCc(): array
+    {
+        return app(MailSettings::class)->commonCc();
+    }
+
+    /**
+     * @return list<string>
+     */
+    #[Computed]
+    public function commonBcc(): array
+    {
+        return app(MailSettings::class)->commonBcc();
     }
 
     /**
@@ -114,4 +133,19 @@ new #[Title('設定')] class extends Component
 
         <flux:button type="submit" variant="primary" data-test="save-settings">保存する</flux:button>
     </form>
+
+    @if ($this->commonCc !== [] || $this->commonBcc !== [])
+        <flux:callout icon="information-circle" class="mt-10" data-test="common-addresses">
+            <flux:callout.heading>すべてのメールに付くアドレス（環境変数で設定）</flux:callout.heading>
+            <flux:callout.text>
+                @if ($this->commonCc !== [])
+                    CC：{{ implode('、', $this->commonCc) }}<br>
+                @endif
+                @if ($this->commonBcc !== [])
+                    BCC：{{ implode('、', $this->commonBcc) }}<br>
+                @endif
+                上の保存用BCCと併せて送信されます。変更はサーバー管理者にご依頼ください。
+            </flux:callout.text>
+        </flux:callout>
+    @endif
 </section>

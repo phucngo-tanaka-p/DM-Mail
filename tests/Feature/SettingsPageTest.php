@@ -37,6 +37,20 @@ class SettingsPageTest extends TestCase
             ->assertSet('signature', '');
     }
 
+    public function test_common_addresses_from_env_are_shown_read_only(): void
+    {
+        config(['mail.common_cc' => '', 'mail.common_bcc' => '']);
+
+        $this->get(route('settings.index'))->assertDontSee('環境変数で設定');
+
+        config(['mail.common_cc' => 'boss@example.com', 'mail.common_bcc' => 'log@example.com;audit@example.com']);
+
+        $this->get(route('settings.index'))
+            ->assertSee('環境変数で設定')
+            ->assertSee('CC：boss@example.com')
+            ->assertSee('BCC：log@example.com、audit@example.com');
+    }
+
     public function test_settings_can_be_saved(): void
     {
         Livewire::test('pages::settings.index')
